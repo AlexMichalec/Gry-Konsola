@@ -175,7 +175,3 @@ def sortujslowa():
 if __name__ == '__main__':
     gra()
 
-"""
-Do zrobienia:
-Logo?
-poprawpić instrukcję"""
