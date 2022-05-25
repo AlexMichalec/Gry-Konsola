@@ -3,6 +3,8 @@ import sys
 import time
 import litery
 
+
+
 class Worek:
     def __init__(self):
         self.kafelki = list(kafelki())
@@ -40,27 +42,26 @@ class Plansza:
     def wypisz(self,czyInstrukcja=True):
 
         borderTop = "\n" + \
-                    self.gracze[1].name.upper().center(63) + "\n" + \
+                    self.gracze[1].imie.upper().center(63) + "\n" + \
                     ("[ ]"*len(self.gracze[1].reka)).center(63) + \
                     "\n"
 
         handBottom="["+"][".join(self.gracze[3].reka)+"]"
-        borderBottom = "\n" + \
-                       handBottom.center(63) + "\n" + \
-                       self.gracze[3].name.upper().center(63) + "\n" + \
+        borderBottom = handBottom.center(63) + "\n" + \
+                       self.gracze[3].imie.upper().center(63) + "\n" + \
                        "\n"
 
-        borderLeftCol1 = self.gracze[0].name.upper().center(15)
+        borderLeftCol1 = self.gracze[0].imie.upper().center(15)
         borderLeftCol2 = ("["*len(self.gracze[0].reka)).center(15)
         borderLeftCol3 = ("]" * len(self.gracze[0].reka)).center(15)
 
-        borderRightCol3 = self.gracze[2].name.upper().center(15)
+        borderRightCol3 = self.gracze[2].imie.upper().center(15)
         borderRightCol2 = ("]" * len(self.gracze[2].reka)).center(15)
         borderRightCol1 = ("[" * len(self.gracze[2].reka)).center(15)
 
 
         borderRightInfo = ["       Wyniki:"]
-        wynikiTab = [[g.punkty,g.name] for g in self.gracze]
+        wynikiTab = [[g.punkty,g.imie] for g in self.gracze]
         wynikiTab.sort(reverse=True)
         self.winner = wynikiTab[0][1]
         for w in wynikiTab:
@@ -70,7 +71,8 @@ class Plansza:
 
         if czyInstrukcja:
             borderRightInfo += ["W woreczku pozostało " + str(self.gracze[0].worek.ile) + " kafelków"]
-            borderRightInfo +=["       Instrukcja:",
+            borderRightInfo +=["",
+                                "       Instrukcja:",
                                "Postaraj się ułożyć słowo o jak największej ",
                                "liczbie punktów używając kafelków, które masz",
                                "przed sobą. Słowo musi łączyć się z jednym ",
@@ -78,18 +80,14 @@ class Plansza:
                                "       Specjalne akcje:",
                                "w - wymień wybrane kafelki",
                                "s - sprawdź ile punktów ma podane słowo",
+                               "p - poproś o podpowiedź",
                                "c - czekaj/omiń turę | z - zamknij grę"]
         else:
-            borderRightInfo += ["", "W woreczku pozostało ", str(self.gracze[0].worek.ile) + " kafelków"]
+            borderRightInfo += ["", "W woreczku pozostało ", kaf(self.gracze[0].worek.ile)]
 
         print("\n")
-        print(borderTop)
-        """
-        print("\n"+"   "*(((15-len(self.gracze[1].name))//2)+2),end="")
-        for i in self.gracze[1].name:
-            print("[" + i.upper() + "]", end="")
-        print("\n")
-        """
+        print(borderTop,end=" "*72)
+        print(borderRightInfo[0])
         for j,i in enumerate(self.tablica):
             print(" " + borderLeftCol1[j],borderLeftCol2[j],borderLeftCol3[j]+"   ",end="")
             for ii in i:
@@ -97,14 +95,14 @@ class Plansza:
 
 
             print("   "+borderRightCol1[j],borderRightCol2[j],borderRightCol3[j]+" ",end="")
-            if j < len(borderRightInfo):
-                print(" "*9+borderRightInfo[j])
+            if j+1 < len(borderRightInfo):
+                print(" "*9+borderRightInfo[j+1])
             else:
                 print("")
-
-          #  else:
-          #      print(" "*6,end="")
-
+        if czyInstrukcja:
+            print(" "*72+borderRightInfo[-1])
+        else:
+            print("")
         print(borderBottom)
         print("\n")
 
@@ -203,8 +201,8 @@ class Plansza:
 
 
 class Gracz:
-    def __init__(self,worek,plansza,name="Anonymous"):
-        self.name = name
+    def __init__(self,worek,plansza,imie="Anonymous"):
+        self.imie = imie
         self.reka = []
         self.punkty = 0
         self.worek = worek
@@ -214,7 +212,7 @@ class Gracz:
         r_pom = ""
         for i in self.reka:
             r_pom += "[" + i + "]"
-        return "Gracz: " + self.name + \
+        return "Gracz: " + self.imie + \
                "\nPunkty: " + str(self.punkty) + \
                "\nRęka: " + r_pom + "\n\n"
 
@@ -233,22 +231,19 @@ class Gracz:
         kafelki_na_stole = list(kafelki_na_stole)
         kafelki_na_stole.remove(" ")
         lista_slow = []
-     #   print(kafelki_na_stole)
         if len(kafelki_na_stole) == 0:
             lista_slow = najlepszeSlowo(self.reka,tryb=True)
         else:
             for k in kafelki_na_stole:
                 lista_slow += najlepszeSlowo (self.reka+list(k),k,True)
-     #           print(lista_slow)
         lista_slow=list(set(lista_slow))
         lista_slow.sort(key=wartosc_slowa, reverse=True)
-      #  print(lista_slow)
+        lista_slow = easy(lista_slow)
         for s in lista_slow:
             result = self.plansza.doloz(s,True,self.reka)
             if not result:
                 continue
             self.punkty += wartosc_slowa(s)
-    #        print("R    "+str(result) +"\nS   "+s)
             for r in result:
                 self.reka.remove(r)
             return [s,wartosc_slowa(s)]
@@ -256,14 +251,14 @@ class Gracz:
 
     def pre_ruch(self):
         self.plansza.wypisz(False)
-        kwestia = random.choice(["hmmm","niech się zastanowię","niech pomyślę","hmmmmmm","dajcie mi chwilę",
-                                 "co by tu ułożyć","mam to na końcu języka","zaraz, zaraz"])
-        print(self.name+": "+kwestia,end="")
+        kwestia = random.choice(["Hmmm","Niech się zastanowię","Niech pomyślę","Hmmmmmm","Dajcie mi chwilę",
+                                 "Co by tu ułożyć","Mam to na końcu języka","Zaraz, zaraz"])
+        print(self.imie+": "+kwestia,end="")
         dotts = random.randint(3,7)
         for i in range(dotts):
             print(".",end="")
             sys.stdout.flush()
-            time.sleep(1)
+            wait(1)
         print("")
 
     def ruch(self):
@@ -271,7 +266,7 @@ class Gracz:
         if temp:=self.doloz():
             self.dobierz()
         else:
-            temp=max(len(self.reka),random.randint(3,7))
+            temp=min(len(self.reka),random.randint(3,7),self.worek.ile)
             self.wymien(temp)
             temp=[temp]
         return self.post_ruch(temp)
@@ -284,9 +279,9 @@ class Gracz:
                 print("Wymieniam ",kaf(temp[0]))
             return 0
         else:
-            kwestia = random.choice(["już wiem!","niech będzie:","spróbujmy","układam:"])
-            print(kwestia,temp[0].upper(),"to będzie",pkt(temp[1]))
-            time.sleep(2)
+            kwestia = random.choice(["Już wiem!","Niech będzie:","Spróbujmy","Układam:"])
+            print(kwestia,temp[0].upper(),", otrzymuję: ",pkt(temp[1]))
+            wait(2)
             return 1
 
     def wymien(self,k=4,doWymiany="!"):
@@ -319,8 +314,8 @@ class ZywyGracz(Gracz):
             print("Wymieniasz",kaf(temp[0]))
             return 0
         else:
-            print("To będzie",pkt(temp[1]))
-            time.sleep(2)
+            print("Otrzymujesz: ",pkt(temp[1]))
+            wait(2)
             return 1
 
     def decyzja(self):
@@ -337,12 +332,16 @@ class ZywyGracz(Gracz):
                 if slowo == "s":
                     slowo = input("Podaj słowo:\n")
                     print ("To słowo jest warte: "+pkt(wartosc_slowa(slowo.lower())))
-                    slowo = input("Wpisz słowo lub wybierz specjalną akcję\n").lower()
+                    slowo = input("Wpisz słowo lub wybierz akcję specjalną\n").lower()
                     continue
                 if slowo == "c":
                     return []
                 if slowo == "z":
                     return ["quit"]
+                if slowo == "p":
+                    self.wskazowka()
+                    slowo = input("Wpisz słowo lub wybierz akcję specjalną\n").lower()
+                    continue
 
             temp=self.plansza.doloz(slowo,reka=self.reka)
             if not temp:
@@ -352,6 +351,20 @@ class ZywyGracz(Gracz):
             self.reka.remove(t)
         self.dobierz()
         return [slowo,wartosc_slowa(slowo)]
+    
+    def wskazowka(self):
+        for r in range(100):
+            i = random.randint(0,14)
+            j = random.randint(0,14)
+            z = self.plansza.tablica[i][j]
+            temp = najlepszeSlowo(self.reka+[z],z,True)
+            for t in temp:
+                if self.plansza.doloz(t,tryb=False,reka=self.reka):
+                    print("Spróbuj: "+ t)
+                    return
+        print("Spróbuj dobrać kafelki, jeśli woreczek nie jest jeszcze pusty")
+        return
+
 
 
 class Gra:
@@ -375,22 +388,24 @@ class Gra:
                 counter+=1
             else:
                 counter=0
-            time.sleep(1)
+            wait(1)
             i=(i+1)%4
         self.koniec(k)
 
     def poczatek(self):
-        self.gracze[-1].name=input("\n\n\nWitaj w grze Scrabble!\nPodaj swoje imię:\n").capitalize()
-        self.gracze[0].name,self.gracze[1].name,self.gracze[2].name = losuj_imie(3,self.gracze[-1].name)
-        print("\nDziękuję\n")
-        time.sleep(1)
+        self.gracze[-1].imie=input("\n\n\nWitaj w grze Scrabble!\nPodaj swoje imię:\n").capitalize()
+        if len(self.gracze[-1].imie) >23:
+            self.gracze[-1].imie = self.gracze[-1].imie[:20]+"..."
+        self.gracze[0].imie,self.gracze[1].imie,self.gracze[2].imie = losuj_imie(3,self.gracze[-1].imie)
+        print("\nDziękujemy\n")
+        wait(1)
         print("Dzisiaj będziesz grać z:")
         for g in self.gracze[0:-1]:
-            print(g.name,end="  ")
+            print(g.imie,end="  ")
         sys.stdout.flush()
-        time.sleep(2)
+        wait(2)
         print("\n\nZaczynajmy ^^\n")
-        time.sleep(2)
+        wait(2)
         for g in self.gracze:
             g.dobierz()
 
@@ -398,22 +413,23 @@ class Gra:
         self.plansza.wypisz(False)
         if not czyPrzerwana:
             print("Koniec gry\n\nWygrywa {}! Gratulacje ^^".format(self.plansza.winner))
-            time.sleep(1)
-        print("Dziękujemy za grę ^^")
+            wait(1)
+        print("\nDziękujemy za grę ^^")
+        wait(2)
 
 
 def start():
     litery.pisz("Scrabble")
-    time.sleep(1)
+    wait(1)
     litery.podpis()
-    time.sleep(1)
+    wait(1)
     while True:
         print("""
         1. Nowa Gra
         2. Instrukcja
         3. Ustawienia
         4. Wyjście""")
-        time.sleep(1)
+        wait(1)
         choice = input("\n    Wybierz akcję(1-4)\n")
         match choice:
             case "1":
@@ -470,8 +486,41 @@ def instrukcja():
         p = input(" Wpisz X aby wyjść i kliknij enter\n")
 
 def ustawienia():
-    print("Tu jeszcze nic nie ma...")
-    time.sleep(1)
+    global PREDKOSC
+    global POZIOM_TRUDNOSCI
+    global ILOSC_GRACZY
+    while True:
+        tpg = ("ekspresowa","szybka","normalna","wolna")[PREDKOSC]
+        tpt = ("łatwy","średni","trudny")[POZIOM_TRUDNOSCI]
+        til = ("{} w tym {} żywy".format(*ILOSC_GRACZY))
+        print("""
+        1. Prędkość gry: {} 
+        2. Poziom trudności: {}
+        3. Liczba graczy: {}
+        """.format(tpg,tpt,til))
+        wait(1)
+        wybor = input("Wybierz co chcesz zmienić(1-3) lub wpisz x żeby wyjść\n")
+        match wybor:
+            case "1":
+                ust = input("Opcje: (1)wolna (2)normalna (3)szybka (4)ekspresowa\n")
+                while ust not in ("1","2","3","4"):
+                    ust = input ("wpisz 1, 2, 3 lub 4")
+                PREDKOSC = 4-int(ust)
+            case "2":
+                ust = input("Opcje: (1)łatwy (2)średni (3)trudny\n")
+                while ust not in ("1","2","3"):
+                    ust = input ("wpisz 1, 2 lub 3\n")
+                POZIOM_TRUDNOSCI = int(ust) - 1
+            case "3":
+                print ("Tej opcji jeszcze nie można zmienić :c")
+            case "x":
+                wait(1)
+                return
+            case "X":
+                wait(1)
+                return
+
+
 
 def losuj_imie(k=1,imie="Quebo"):
     lista_imion = ["Arek", "Beata", "Czarek", "Dorota", "Eryk", "Faustyna", "Gienek", "Hania", "Irek", "Jola", "Kacper",
@@ -533,6 +582,34 @@ def pkt(number):
     else:
         return str(number) + " punktów"
 
+def wait(period):
+    time.sleep(period*PREDKOSC/2)
+
+def easy(lista):
+    a=0
+    b=0
+    match POZIOM_TRUDNOSCI:
+        case 0:
+            a = len(lista)//4
+            b = len(lista)-1
+            if a>=b:
+                return lista
+        case 1:
+            a = len(lista)//20
+            b = len(lista)//2
+            if a>=b:
+                return lista
+        case 2:
+            a = 0
+            b = 10
+            if len(lista)<10:
+                b = len(lista)-2
+            if b<=0:
+                return lista
+    r = random.randint(a,b)
+    return lista[r:]
+        
+
 def wartosc_litery(a):
     litery=list("aąbcćdeęfghijklłmnńoóprsśtuwyzźż")
     wartosci=[1,5,3,2,6,2,1,5,5,3,3,1,3,2,2,3,2,1,7,1,5,2,1,1,5,2,3,1,2,1,9,5]
@@ -555,7 +632,6 @@ def czy_mozna_ulozyc(kafelki):
     return inner
 
 def najlepszeSlowo(tab,kryt='!',tryb=False):
-#    print("t  ",str(tab))
     litery=list("aąbcćdeęfghijklłmnńoóprsśtuwyzźżx*v9?>1q")
     pom = [a for a in litery if a not in tab]
     with open("LITEROWKA.txt",'r') as file:
@@ -579,7 +655,6 @@ def doloz(slowo,tab):
     for s in slowo:
         t = najlepszeSlowo(tab+list(s),s)
         w = wartosc_slowa(t)
- #       print(s,t,w)
         if w > naj_wart:
             naj_wart = w
             naj_slowo = t
@@ -588,4 +663,7 @@ def doloz(slowo,tab):
 
 
 if __name__ == "__main__":
+    POZIOM_TRUDNOSCI = 1
+    PREDKOSC = 2
+    ILOSC_GRACZY = (4,1)
     start()
